@@ -35,7 +35,9 @@ SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇",
 # --- spinner ---
 
 class Spinner:
-    def __init__(self):
+    def __init__(self, label="working...", color=YELLOW):
+        self._label = label
+        self._color = color
         self._stop = threading.Event()
         self._thread = None
         self._frames = itertools.cycle(SPINNER_FRAMES)
@@ -47,7 +49,7 @@ class Spinner:
 
     def _spin(self):
         while not self._stop.is_set():
-            sys.stdout.write(f"{CLEAR_LINE}{YELLOW}{next(self._frames)} working...{RESET}")
+            sys.stdout.write(f"{CLEAR_LINE}{self._color}{next(self._frames)} {self._label}{RESET}")
             sys.stdout.flush()
             time.sleep(0.08)
 
@@ -140,7 +142,10 @@ def stream_chat(messages, tools):
         headers={"Content-Type": "application/json"},
     )
 
-    spinner = Spinner()
+    responding = Spinner("responding...", BLUE)
+    working = Spinner("working...", YELLOW)
+    responding.start()
+
     md = {"code": False, "bold": False, "stars": 0}
     content_parts = []
     tool_calls = {}
@@ -148,10 +153,11 @@ def stream_chat(messages, tools):
     with urllib.request.urlopen(req) as resp:
         for delta in parse_sse(resp):
 
-            # tool call chunks — spinner runs while these stream
+            # tool call chunks — swap to yellow working spinner
             if delta.get("tool_calls"):
                 if not tool_calls:
-                    spinner.start()
+                    responding.stop()
+                    working.start()
                 for tc in delta["tool_calls"]:
                     idx = tc["index"]
                     if idx not in tool_calls:
@@ -162,16 +168,17 @@ def stream_chat(messages, tools):
                         tool_calls[idx]["name"] = tc["function"]["name"]
                     tool_calls[idx]["arguments"] += tc.get("function", {}).get("arguments", "")
 
-            # content tokens — print immediately
+            # content tokens — stop spinner, print immediately
             token = delta.get("content")
             if token:
                 if not content_parts:
+                    responding.stop()
                     print(f"{BLUE}Atom: {WHITE}", end="", flush=True)
                 print(format_token(token, md), end="", flush=True)
                 content_parts.append(token)
 
-    # ensure spinner is fully stopped before any further output
-    spinner.stop()
+    responding.stop()
+    working.stop()
 
     if content_parts:
         print(RESET)
