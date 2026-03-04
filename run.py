@@ -168,9 +168,9 @@ def main():
                 except json.JSONDecodeError:
                     args = {}
 
-                print(f"{YELLOW}  [{name}] {args.get('command', args)}{RESET}")
+                print(f"{YELLOW}[{name}] {args.get('command', args)}{RESET}")
                 result = run_tool(name, args)
-                print(f"{GRAY}  {result[:200]}{'...' if len(result) > 200 else ''}{RESET}")
+                print(f"{GRAY}{result[:200]}{'...' if len(result) > 200 else ''}{RESET}")
 
                 messages.append({
                     "role": "tool",
