@@ -12,6 +12,12 @@ SYSTEM = "You are Atom, a helpful assistant. You have access to tools. When you 
 
 TOOLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools")
 
+# ANSI colors
+BLUE = "\033[34m"
+WHITE = "\033[97m"
+GRAY = "\033[90m"
+RESET = "\033[0m"
+
 
 def load_tools():
     tools = []
@@ -97,7 +103,7 @@ def stream_chat(messages, tools):
                     pass
 
         if content_parts:
-            print()
+            print(RESET)
 
         content = "".join(content_parts) or None
         tc_list = None
@@ -121,9 +127,9 @@ def main():
 
     while True:
         try:
-            user_input = input("You > ").strip()
+            user_input = input(f"{WHITE}You > {GRAY}").strip()
         except (EOFError, KeyboardInterrupt):
-            print("\nBye.")
+            print(f"{RESET}\nBye.")
             break
 
         if not user_input:
@@ -133,11 +139,11 @@ def main():
 
         # loop: LLM may call tools multiple times before giving a final answer
         while True:
-            print("Atom > ", end="", flush=True)
+            print(f"{BLUE}Atom > {WHITE}", end="", flush=True)
             try:
                 content, tool_calls = stream_chat(messages, tools)
             except Exception as e:
-                print(f"\n[error] {e}")
+                print(f"{RESET}\n[error] {e}")
                 messages.pop()
                 break
 
@@ -160,9 +166,9 @@ def main():
                 except json.JSONDecodeError:
                     args = {}
 
-                print(f"  [{name}] {args.get('command', args)}")
+                print(f"{GRAY}  [{name}] {args.get('command', args)}")
                 result = run_tool(name, args)
-                print(f"  → {result[:200]}{'...' if len(result) > 200 else ''}")
+                print(f"  → {result[:200]}{'...' if len(result) > 200 else ''}{RESET}")
 
                 messages.append({
                     "role": "tool",
