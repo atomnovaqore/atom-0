@@ -124,7 +124,7 @@ def main():
     os.system("clear")
     tools = load_tools()
     messages = [{"role": "system", "content": SYSTEM}]
-    print("atom-0  (Ctrl+C to exit)\n")
+    print()
 
     while True:
         try:
