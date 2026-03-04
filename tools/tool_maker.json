@@ -1,0 +1,21 @@
+{
+  "type": "function",
+  "function": {
+    "name": "tool_maker",
+    "description": "Create a new custom tool. The definition must be a JSON string matching this exact format:\n{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"tool_name\",\n    \"description\": \"What the tool does\",\n    \"parameters\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"command\": {\n          \"type\": \"string\",\n          \"description\": \"The bash command to execute\"\n        }\n      },\n      \"required\": [\"command\"]\n    }\n  }\n}\nThe tool will be saved and available immediately on next load.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Tool name (becomes name.json)"
+        },
+        "definition": {
+          "type": "string",
+          "description": "The full JSON tool definition as a string"
+        }
+      },
+      "required": ["name", "definition"]
+    }
+  }
+}

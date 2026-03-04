@@ -16,6 +16,7 @@ from system_prompt import SYSTEM
 LLM_URL = os.environ.get("LLM_URL", "https://api.novaqore.ai/v1/chat/completions")
 MODEL = os.environ.get("LLM_MODEL", "qwen3.5")
 TOOLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools")
+CUSTOM_TOOLS_DIR = os.path.join(os.path.expanduser("~"), ".atom-0-tools")
 
 # ANSI
 BLUE = "\033[34m"
@@ -90,16 +91,30 @@ def format_token(token, state):
 
 def load_tools():
     tools = []
-    if not os.path.isdir(TOOLS_DIR):
-        return tools
-    for f in sorted(os.listdir(TOOLS_DIR)):
-        if f.endswith(".json"):
-            with open(os.path.join(TOOLS_DIR, f)) as fh:
-                tools.append(json.load(fh))
+    for d in (TOOLS_DIR, CUSTOM_TOOLS_DIR):
+        if not os.path.isdir(d):
+            continue
+        for f in sorted(os.listdir(d)):
+            if f.endswith(".json"):
+                with open(os.path.join(d, f)) as fh:
+                    tools.append(json.load(fh))
     return tools
 
 
 def run_tool(name, args):
+    if name == "tool_maker":
+        tool_name = args.get("name", "")
+        definition = args.get("definition", "")
+        os.makedirs(CUSTOM_TOOLS_DIR, exist_ok=True)
+        path = os.path.join(CUSTOM_TOOLS_DIR, f"{tool_name}.json")
+        try:
+            parsed = json.loads(definition)
+            with open(path, "w") as fh:
+                json.dump(parsed, fh, indent=2)
+            return f"Tool '{tool_name}' saved to {path}. It will be available on next load."
+        except json.JSONDecodeError as e:
+            return f"Invalid JSON definition: {e}"
+
     if name == "bash":
         cmd = args.get("command", "")
         try:

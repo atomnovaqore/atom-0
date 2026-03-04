@@ -93,4 +93,5 @@ You have {CPU}.
 RAM is {RAM}.
 Disk is {DISK}.
 Uptime is {UPTIME}.
-GPU is {GPU or 'none'}."""
+GPU is {GPU or 'none'}.
+Your custom tools are in {HOME}/.atom-0-tools/."""
