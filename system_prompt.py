@@ -11,14 +11,6 @@ TIME = now.strftime("%-I:%M %p")
 DATE = now.strftime("%b %-d, %Y")
 TIMEZONE = now.astimezone().tzname()
 
-# location
-try:
-    import urllib.request, json
-    _geo = json.loads(urllib.request.urlopen("http://ip-api.com/json/?fields=city,regionName,country", timeout=3).read())
-    LOCATION = f"{_geo['city']}, {_geo['regionName']}, {_geo['country']}"
-except Exception:
-    LOCATION = "unknown"
-
 # cpu
 try:
     _cpus = os.cpu_count()
@@ -54,7 +46,6 @@ Python is at {PYTHON}.
 The current time is {TIME}.
 The date is {DATE}.
 The timezone is {TIMEZONE}.
-Your location is {LOCATION}.
 You have {CPU}.
 RAM is {RAM}.
 Disk is {DISK}."""
