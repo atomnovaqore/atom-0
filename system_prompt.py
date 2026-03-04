@@ -20,7 +20,6 @@ try:
 except Exception:
     OS = platform.system()
 ARCH = platform.machine()
-HOSTNAME = platform.node()
 SHELL = os.environ.get("SHELL", "unknown")
 
 # cpu
@@ -52,7 +51,6 @@ except Exception:
     DISK = "unknown"
 
 SYSTEM = f"""Your name is Atom.
-The hostname is {HOSTNAME}.
 The OS is {OS} ({ARCH}).
 The shell is {SHELL}.
 Your home directory is {HOME}.
