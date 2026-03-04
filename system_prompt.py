@@ -61,6 +61,24 @@ try:
 except Exception:
     DISK = "unknown"
 
+# gpu
+try:
+    import subprocess
+    _lspci = subprocess.run(["lspci"], capture_output=True, text=True, timeout=5)
+    _vga = [l.split(": ", 1)[1] for l in _lspci.stdout.splitlines() if "VGA" in l]
+    if _vga:
+        _name = _vga[0]
+        try:
+            with open("/sys/class/drm/card0/device/mem_info_vram_total") as f:
+                _vram = round(int(f.read().strip()) / (1024**3), 1)
+            GPU = f"{_name}, {_vram} GB VRAM"
+        except Exception:
+            GPU = _name
+    else:
+        GPU = None
+except Exception:
+    GPU = None
+
 SYSTEM = f"""Your name is Atom.
 The OS is {OS} ({ARCH}).
 The shell is {SHELL}.
@@ -73,4 +91,5 @@ The timezone is {TIMEZONE}.
 You have {CPU}.
 RAM is {RAM}.
 Disk is {DISK}.
-Uptime is {UPTIME}."""
+Uptime is {UPTIME}.
+GPU is {GPU or 'none'}."""
