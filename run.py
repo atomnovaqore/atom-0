@@ -98,7 +98,6 @@ def stream_chat(messages, tools):
     )
 
     spinner = Spinner()
-    spinner.start()
 
     with urllib.request.urlopen(req) as resp:
         buf = b""
@@ -151,6 +150,8 @@ def stream_chat(messages, tools):
                     # tool call chunks
                     for tc in delta.get("tool_calls", []):
                         idx = tc["index"]
+                        if not tool_calls:
+                            spinner.start()
                         if idx not in tool_calls:
                             tool_calls[idx] = {
                                 "id": tc.get("id", f"call_{idx}"),
