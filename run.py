@@ -10,9 +10,11 @@ import threading
 import time
 import urllib.request
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from system_prompt import SYSTEM
+
 LLM_URL = os.environ.get("LLM_URL", "https://api.novaqore.ai/v1/chat/completions")
 MODEL = os.environ.get("LLM_MODEL", "qwen3.5")
-SYSTEM = "You are Atom, a helpful assistant. You have access to tools. When you need to run a command, use the bash tool."
 TOOLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools")
 
 # ANSI
