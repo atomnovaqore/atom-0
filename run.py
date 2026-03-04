@@ -22,6 +22,8 @@ RESET = "\033[0m"
 # inline code: cyan text on dark gray background
 CODE_ON = "\033[36;48;5;236m"
 CODE_OFF = "\033[0m\033[97m"
+BOLD = "\033[1m"
+BOLD_OFF = "\033[22m"
 
 
 def load_tools():
@@ -70,6 +72,8 @@ def stream_chat(messages, tools):
         content_parts = []
         tool_calls = {}  # index -> {id, name, arguments}
         in_code = False
+        in_bold = False
+        star_buf = 0
 
         for chunk in iter(lambda: resp.read(1), b""):
             buf += chunk
@@ -89,9 +93,19 @@ def stream_chat(messages, tools):
                     if token:
                         if not content_parts:
                             print(f"{BLUE}Atom: {WHITE}", end="", flush=True)
-                        # inline code highlighting
+                        # markdown highlighting
                         out = ""
                         for ch in token:
+                            if not in_code and ch == "*":
+                                star_buf += 1
+                                continue
+                            if star_buf:
+                                if star_buf >= 2:
+                                    in_bold = not in_bold
+                                    out += BOLD if in_bold else BOLD_OFF
+                                    star_buf -= 2
+                                out += "*" * star_buf
+                                star_buf = 0
                             if ch == "`":
                                 in_code = not in_code
                                 out += CODE_ON if in_code else CODE_OFF
