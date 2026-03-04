@@ -218,7 +218,7 @@ def main():
 
     while True:
         try:
-            user_input = input(f"{WHITE}You: {BLINK}_{RESET}{GRAY}\b").strip()
+            user_input = input(f"{WHITE}You: {RESET}").strip()
         except (EOFError, KeyboardInterrupt):
             print(f"{RESET}\nBye.")
             break
