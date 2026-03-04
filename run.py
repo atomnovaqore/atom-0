@@ -15,8 +15,10 @@ from system_prompt import SYSTEM
 
 LLM_URL = os.environ.get("LLM_URL", "https://api.novaqore.ai/v1/chat/completions")
 MODEL = os.environ.get("LLM_MODEL", "qwen3.5")
-TOOLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TOOLS_DIR = os.path.join(BASE_DIR, "tools")
 CUSTOM_TOOLS_DIR = os.path.join(os.path.expanduser("~"), ".atom-0-tools")
+HISTORY_FILE = os.path.join(BASE_DIR, "chat_history.json")
 
 # ANSI
 BLUE = "\033[34m"
@@ -150,7 +152,7 @@ def parse_sse(resp):
                 pass
 
 
-def stream_chat(messages, tools):
+def stream_chat(messages, tools, spinner_label="loading..."):
     payload = {"model": MODEL, "messages": messages, "stream": True, "stream_options": {"include_usage": True}}
     if tools:
         payload["tools"] = tools
@@ -161,7 +163,7 @@ def stream_chat(messages, tools):
         headers={"Content-Type": "application/json"},
     )
 
-    responding = Spinner("loading...", BLUE)
+    responding = Spinner(spinner_label, BLUE)
     working = Spinner("working...", YELLOW)
     responding.start()
 
@@ -224,16 +226,39 @@ def stream_chat(messages, tools):
 
 # --- main ---
 
+def load_history():
+    if os.path.isfile(HISTORY_FILE):
+        with open(HISTORY_FILE) as fh:
+            return json.load(fh)
+    return []
+
+
+def save_history(messages):
+    with open(HISTORY_FILE, "w") as fh:
+        json.dump([m for m in messages if m.get("role") != "system"], fh)
+
+
 def main():
     os.system("clear")
     tools = load_tools()
-    messages = [{"role": "system", "content": SYSTEM}]
+    history = load_history()
+    messages = [{"role": "system", "content": SYSTEM}] + history
     print()
+
+    if history:
+        messages.append({"role": "user", "content": "Give a brief recap of our last conversation. Respond short."})
+        try:
+            content, _ = stream_chat(messages, [], spinner_label="Waking up...")
+            if content:
+                messages.append({"role": "assistant", "content": content})
+        except Exception:
+            pass
 
     while True:
         try:
             user_input = input("You: ").strip()
         except (EOFError, KeyboardInterrupt):
+            save_history(messages)
             print(f"{RESET}\nBye.")
             break
         if not user_input:
@@ -257,6 +282,7 @@ def main():
             messages.append(msg)
 
             if not tool_calls:
+                save_history(messages)
                 break
 
             for tc in tool_calls:
