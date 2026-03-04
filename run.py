@@ -217,7 +217,9 @@ def main():
 
     while True:
         try:
-            user_input = input(f"\001{WHITE}\002You:\001{RESET}\002 ").strip()
+            sys.stdout.write(f"{WHITE}You:{RESET} ")
+            sys.stdout.flush()
+            user_input = input().strip()
         except (EOFError, KeyboardInterrupt):
             print(f"{RESET}\nBye.")
             break
