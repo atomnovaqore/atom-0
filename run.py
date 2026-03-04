@@ -142,7 +142,7 @@ def stream_chat(messages, tools):
         headers={"Content-Type": "application/json"},
     )
 
-    responding = Spinner("responding...", BLUE)
+    responding = Spinner("loading...", BLUE)
     working = Spinner("working...", YELLOW)
     responding.start()
 
