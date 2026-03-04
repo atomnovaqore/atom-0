@@ -66,6 +66,7 @@ try:
     import subprocess
     _lspci = subprocess.run(["lspci"], capture_output=True, text=True, timeout=5)
     _vga = [l.split(": ", 1)[1] for l in _lspci.stdout.splitlines() if "VGA" in l]
+    _vga = [v for v in _vga if "Cirrus" not in v and "Bochs" not in v and "QXL" not in v]
     if _vga:
         _name = _vga[0]
         try:
