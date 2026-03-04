@@ -14,6 +14,7 @@ TOOLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools")
 
 # ANSI colors
 BLUE = "\033[34m"
+YELLOW = "\033[33m"
 WHITE = "\033[97m"
 GRAY = "\033[90m"
 RESET = "\033[0m"
@@ -167,9 +168,9 @@ def main():
                 except json.JSONDecodeError:
                     args = {}
 
-                print(f"{GRAY}  [{name}] {args.get('command', args)}")
+                print(f"{YELLOW}  [{name}] {args.get('command', args)}{RESET}")
                 result = run_tool(name, args)
-                print(f"  → {result[:200]}{'...' if len(result) > 200 else ''}{RESET}")
+                print(f"{GRAY}  {result[:200]}{'...' if len(result) > 200 else ''}{RESET}")
 
                 messages.append({
                     "role": "tool",
