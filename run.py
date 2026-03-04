@@ -19,6 +19,9 @@ YELLOW = "\033[33m"
 WHITE = "\033[97m"
 GRAY = "\033[90m"
 RESET = "\033[0m"
+# inline code: cyan text on dark gray background
+CODE_ON = "\033[36;48;5;236m"
+CODE_OFF = "\033[0m\033[97m"
 
 
 def load_tools():
@@ -91,7 +94,7 @@ def stream_chat(messages, tools):
                         for ch in token:
                             if ch == "`":
                                 in_code = not in_code
-                                out += CYAN if in_code else WHITE
+                                out += CODE_ON if in_code else CODE_OFF
                             else:
                                 out += ch
                         print(out, end="", flush=True)
