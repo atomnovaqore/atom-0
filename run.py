@@ -127,7 +127,7 @@ def main():
 
     while True:
         try:
-            user_input = input(f"{WHITE}You > {GRAY}").strip()
+            user_input = input(f"{WHITE}You: {GRAY}").strip()
         except (EOFError, KeyboardInterrupt):
             print(f"{RESET}\nBye.")
             break
@@ -139,7 +139,7 @@ def main():
 
         # loop: LLM may call tools multiple times before giving a final answer
         while True:
-            print(f"{BLUE}Atom > {WHITE}", end="", flush=True)
+            print(f"{BLUE}Atom: {WHITE}", end="", flush=True)
             try:
                 content, tool_calls = stream_chat(messages, tools)
             except Exception as e:
