@@ -2,7 +2,7 @@
   "type": "function",
   "function": {
     "name": "bash",
-    "description": "Execute a bash command on the system and return its output. Use this to run shell commands, inspect files, check system state, install packages, or perform any operation available via the command line.",
+    "description": "Execute a bash command on the system and return its output. Always use absolute paths. Use this to run shell commands, inspect files, check system state, install packages, or perform any operation available via the command line.",
     "parameters": {
       "type": "object",
       "properties": {
