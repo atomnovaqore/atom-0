@@ -46,7 +46,7 @@ class Spinner:
     def _spin(self):
         while not self._stop.is_set():
             frame = next(SPINNER)
-            sys.stdout.write(f"\r{GRAY}{frame} working...{RESET}")
+            sys.stdout.write(f"\r{YELLOW}{frame} working...{RESET}")
             sys.stdout.flush()
             time.sleep(0.08)
 
@@ -107,7 +107,6 @@ def stream_chat(messages, tools):
         in_code = False
         in_bold = False
         star_buf = 0
-        got_first = False
 
         for chunk in iter(lambda: resp.read(1), b""):
             buf += chunk
@@ -122,15 +121,11 @@ def stream_chat(messages, tools):
                     obj = json.loads(line[6:])
                     delta = obj["choices"][0].get("delta", {})
 
-                    # stop spinner on first real data
-                    if not got_first and (delta.get("content") or delta.get("tool_calls")):
-                        spinner.stop()
-                        got_first = True
-
                     # content tokens
                     token = delta.get("content")
                     if token:
                         if not content_parts:
+                            spinner.stop()
                             print(f"{BLUE}Atom: {WHITE}", end="", flush=True)
                         # markdown highlighting
                         out = ""
@@ -171,8 +166,7 @@ def stream_chat(messages, tools):
                 except (json.JSONDecodeError, KeyError, IndexError):
                     pass
 
-        if not got_first:
-            spinner.stop()
+        spinner.stop()
         if content_parts:
             print(RESET)
 
