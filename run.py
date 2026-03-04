@@ -196,7 +196,7 @@ def stream_chat(messages, tools):
         p = usage.get('prompt_tokens', 0)
         c = usage.get('completion_tokens', 0)
         t = usage.get('total_tokens', 0)
-        print(f"{GRAY}{p} in / {c} out — {t}/262144{RESET}")
+        print(f"{GRAY}{p} : {c} : {t}/262144{RESET}")
 
     content = "".join(content_parts) or None
     tc_list = None
