@@ -51,8 +51,6 @@ class Spinner:
         if self._active:
             return
         self._stop.clear()
-        sys.stdout.write("\n")
-        sys.stdout.flush()
         self._active = True
         self._thread = threading.Thread(target=self._spin, daemon=True)
         self._thread.start()
@@ -121,19 +119,19 @@ def run_tool(name, args):
             parsed = json.loads(definition)
             with open(path, "w") as fh:
                 json.dump(parsed, fh, indent=2)
-            return f"Tool '{tool_name}' saved to {path}. It will be available on next load."
+            return f"Tool '{tool_name}' saved to {path}. RELOAD_TOOLS"
         except json.JSONDecodeError as e:
             return f"Invalid JSON definition: {e}"
 
-    if name == "bash":
-        cmd = args.get("command", "")
-        try:
-            r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
-            out = r.stdout + r.stderr
-            return out.strip() or "(no output)"
-        except subprocess.TimeoutExpired:
-            return "(timed out)"
-    return f"(unknown tool: {name})"
+    cmd = args.get("command", "")
+    if not cmd:
+        return f"(no command provided for tool: {name})"
+    try:
+        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
+        out = r.stdout + r.stderr
+        return out.strip() or "(no output)"
+    except subprocess.TimeoutExpired:
+        return "(timed out)"
 
 
 # --- streaming ---
@@ -177,6 +175,7 @@ def stream_chat(messages, tools, spinner_label="loading...", spinner_color=BLUE)
 
     md = {"code": False, "bold": False, "stars": 0}
     content_parts = []
+    content_ended = False
     tool_calls = {}
     usage = None
 
@@ -188,6 +187,10 @@ def stream_chat(messages, tools, spinner_label="loading...", spinner_color=BLUE)
             # tool call chunks — swap to yellow working spinner
             if delta.get("tool_calls"):
                 if not tool_calls:
+                    if content_parts and not content_ended:
+                        sys.stdout.write(f"{RESET}\n")
+                        sys.stdout.flush()
+                        content_ended = True
                     responding.stop()
                     working.start()
                 for tc in delta["tool_calls"]:
@@ -205,22 +208,26 @@ def stream_chat(messages, tools, spinner_label="loading...", spinner_color=BLUE)
             if token:
                 if not content_parts:
                     responding.stop()
-                    print(f"{BLUE}Atom: {WHITE}", end="", flush=True)
-                print(format_token(token, md), end="", flush=True)
+                    sys.stdout.write(f"{BLUE}Atom: {WHITE}")
+                    sys.stdout.flush()
+                sys.stdout.write(format_token(token, md))
+                sys.stdout.flush()
                 content_parts.append(token)
 
     responding.stop()
     working.stop()
 
-    if content_parts:
-        print(RESET)
+    if content_parts and not content_ended:
+        sys.stdout.write(f"{RESET}\n")
+        sys.stdout.flush()
 
     # show token usage
     if usage:
         p = usage.get('prompt_tokens', 0)
         c = usage.get('completion_tokens', 0)
         t = usage.get('total_tokens', 0)
-        print(f"{GRAY}{p}:{c} - {t}/262144{RESET}")
+        sys.stdout.write(f"{GRAY}{p}:{c} - {t}/262144{RESET}\n")
+        sys.stdout.flush()
 
     content = "".join(content_parts) or None
     tc_list = None
@@ -308,6 +315,9 @@ def main():
                     args = {}
                 print(f"{YELLOW}[{name}] {args.get('command', args)}{RESET}")
                 result = run_tool(name, args)
+                if "RELOAD_TOOLS" in result:
+                    tools = load_tools()
+                    result = result.replace("RELOAD_TOOLS", "Tool is now available.")
                 print(f"{GRAY}{result[:200]}{'...' if len(result) > 200 else ''}{RESET}")
                 messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
 
