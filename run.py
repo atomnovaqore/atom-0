@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """atom-0 — dead-simple chat CLI with tool use"""
 
+import itertools
 import json
 import os
 import subprocess
+import sys
+import threading
+import time
 import urllib.request
 
 LLM_URL = os.environ.get("LLM_URL", "https://api.novaqore.ai/v1/chat/completions")
@@ -24,6 +28,32 @@ CODE_ON = "\033[36;48;5;236m"
 CODE_OFF = "\033[0m\033[97m"
 BOLD = "\033[1m"
 BOLD_OFF = "\033[22m"
+
+
+SPINNER = itertools.cycle(["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"])
+
+
+class Spinner:
+    def __init__(self):
+        self._stop = threading.Event()
+        self._thread = None
+
+    def start(self):
+        self._stop.clear()
+        self._thread = threading.Thread(target=self._spin, daemon=True)
+        self._thread.start()
+
+    def _spin(self):
+        while not self._stop.is_set():
+            frame = next(SPINNER)
+            sys.stdout.write(f"\r{GRAY}{frame} working...{RESET}")
+            sys.stdout.flush()
+            time.sleep(0.08)
+
+    def stop(self):
+        self._stop.set()
+        sys.stdout.write("\r\033[K")
+        sys.stdout.flush()
 
 
 def load_tools():
@@ -67,6 +97,9 @@ def stream_chat(messages, tools):
         LLM_URL, data=body, headers={"Content-Type": "application/json"}
     )
 
+    spinner = Spinner()
+    spinner.start()
+
     with urllib.request.urlopen(req) as resp:
         buf = b""
         content_parts = []
@@ -74,6 +107,7 @@ def stream_chat(messages, tools):
         in_code = False
         in_bold = False
         star_buf = 0
+        got_first = False
 
         for chunk in iter(lambda: resp.read(1), b""):
             buf += chunk
@@ -87,6 +121,11 @@ def stream_chat(messages, tools):
                 try:
                     obj = json.loads(line[6:])
                     delta = obj["choices"][0].get("delta", {})
+
+                    # stop spinner on first real data
+                    if not got_first and (delta.get("content") or delta.get("tool_calls")):
+                        spinner.stop()
+                        got_first = True
 
                     # content tokens
                     token = delta.get("content")
@@ -132,6 +171,8 @@ def stream_chat(messages, tools):
                 except (json.JSONDecodeError, KeyError, IndexError):
                     pass
 
+        if not got_first:
+            spinner.stop()
         if content_parts:
             print(RESET)
 
