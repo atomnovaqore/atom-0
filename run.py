@@ -82,6 +82,8 @@ def stream_chat(messages, tools):
                     # content tokens
                     token = delta.get("content")
                     if token:
+                        if not content_parts:
+                            print(f"{BLUE}Atom: {WHITE}", end="", flush=True)
                         print(token, end="", flush=True)
                         content_parts.append(token)
 
@@ -141,7 +143,6 @@ def main():
 
         # loop: LLM may call tools multiple times before giving a final answer
         while True:
-            print(f"{BLUE}Atom: {WHITE}", end="", flush=True)
             try:
                 content, tool_calls = stream_chat(messages, tools)
             except Exception as e:
