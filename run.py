@@ -14,6 +14,7 @@ TOOLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools")
 
 # ANSI colors
 BLUE = "\033[34m"
+CYAN = "\033[36m"
 YELLOW = "\033[33m"
 WHITE = "\033[97m"
 GRAY = "\033[90m"
@@ -65,6 +66,7 @@ def stream_chat(messages, tools):
         buf = b""
         content_parts = []
         tool_calls = {}  # index -> {id, name, arguments}
+        in_code = False
 
         for chunk in iter(lambda: resp.read(1), b""):
             buf += chunk
@@ -84,7 +86,15 @@ def stream_chat(messages, tools):
                     if token:
                         if not content_parts:
                             print(f"{BLUE}Atom: {WHITE}", end="", flush=True)
-                        print(token, end="", flush=True)
+                        # inline code highlighting
+                        out = ""
+                        for ch in token:
+                            if ch == "`":
+                                in_code = not in_code
+                                out += CYAN if in_code else WHITE
+                            else:
+                                out += ch
+                        print(out, end="", flush=True)
                         content_parts.append(token)
 
                     # tool call chunks
