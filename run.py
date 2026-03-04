@@ -25,6 +25,7 @@ BOLD = "\033[1m"
 BOLD_OFF = "\033[22m"
 CODE_ON = "\033[36;48;5;236m"
 CODE_OFF = "\033[0m\033[97m"
+CLEAR_LINE = "\r\033[K"
 
 SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
@@ -34,26 +35,27 @@ SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇",
 class Spinner:
     def __init__(self):
         self._stop = threading.Event()
-        self._running = False
+        self._thread = None
         self._frames = itertools.cycle(SPINNER_FRAMES)
 
     def start(self):
         self._stop.clear()
-        self._running = True
-        threading.Thread(target=self._spin, daemon=True).start()
+        self._thread = threading.Thread(target=self._spin, daemon=True)
+        self._thread.start()
 
     def _spin(self):
         while not self._stop.is_set():
-            sys.stdout.write(f"\r{YELLOW}{next(self._frames)} working...{RESET}")
+            sys.stdout.write(f"{CLEAR_LINE}{YELLOW}{next(self._frames)} working...{RESET}")
             sys.stdout.flush()
             time.sleep(0.08)
 
     def stop(self):
-        if not self._running:
+        if self._thread is None:
             return
         self._stop.set()
-        self._running = False
-        sys.stdout.write("\r\033[K")
+        self._thread.join()
+        self._thread = None
+        sys.stdout.write(CLEAR_LINE)
         sys.stdout.flush()
 
 
@@ -107,6 +109,24 @@ def run_tool(name, args):
 
 # --- streaming ---
 
+def parse_sse(resp):
+    """Yield delta dicts from an SSE response."""
+    buf = b""
+    for chunk in iter(lambda: resp.read(1), b""):
+        buf += chunk
+        while b"\n" in buf:
+            line, buf = buf.split(b"\n", 1)
+            line = line.strip()
+            if not line or line == b"data: [DONE]":
+                continue
+            if not line.startswith(b"data: "):
+                continue
+            try:
+                yield json.loads(line[6:])["choices"][0].get("delta", {})
+            except (json.JSONDecodeError, KeyError, IndexError):
+                pass
+
+
 def stream_chat(messages, tools):
     payload = {"model": MODEL, "messages": messages, "stream": True}
     if tools:
@@ -124,34 +144,14 @@ def stream_chat(messages, tools):
     tool_calls = {}
 
     with urllib.request.urlopen(req) as resp:
-        buf = b""
-        for chunk in iter(lambda: resp.read(1), b""):
-            buf += chunk
-            while b"\n" in buf:
-                line, buf = buf.split(b"\n", 1)
-                line = line.strip()
-                if not line or line == b"data: [DONE]":
-                    continue
-                if not line.startswith(b"data: "):
-                    continue
-                try:
-                    delta = json.loads(line[6:])["choices"][0].get("delta", {})
-                except (json.JSONDecodeError, KeyError, IndexError):
-                    continue
+        for delta in parse_sse(resp):
 
-                # content
-                token = delta.get("content")
-                if token:
-                    if not content_parts:
-                        print(f"{BLUE}Atom: {WHITE}", end="", flush=True)
-                    print(format_token(token, md), end="", flush=True)
-                    content_parts.append(token)
-
-                # tool calls — start spinner on first chunk
-                for tc in delta.get("tool_calls", []):
+            # tool call chunks — spinner runs while these stream
+            if delta.get("tool_calls"):
+                if not tool_calls:
+                    spinner.start()
+                for tc in delta["tool_calls"]:
                     idx = tc["index"]
-                    if not tool_calls:
-                        spinner.start()
                     if idx not in tool_calls:
                         tool_calls[idx] = {"id": tc.get("id", f"call_{idx}"), "name": tc.get("function", {}).get("name", ""), "arguments": ""}
                     if tc.get("id"):
@@ -160,7 +160,17 @@ def stream_chat(messages, tools):
                         tool_calls[idx]["name"] = tc["function"]["name"]
                     tool_calls[idx]["arguments"] += tc.get("function", {}).get("arguments", "")
 
+            # content tokens — print immediately
+            token = delta.get("content")
+            if token:
+                if not content_parts:
+                    print(f"{BLUE}Atom: {WHITE}", end="", flush=True)
+                print(format_token(token, md), end="", flush=True)
+                content_parts.append(token)
+
+    # ensure spinner is fully stopped before any further output
     spinner.stop()
+
     if content_parts:
         print(RESET)
 
