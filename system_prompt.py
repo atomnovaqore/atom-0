@@ -22,6 +22,17 @@ except Exception:
 ARCH = platform.machine()
 SHELL = os.environ.get("SHELL", "unknown")
 
+# uptime
+try:
+    with open("/proc/uptime") as f:
+        _secs = int(float(f.read().split()[0]))
+    _days, _rem = divmod(_secs, 86400)
+    _hrs, _rem = divmod(_rem, 3600)
+    _mins = _rem // 60
+    UPTIME = f"{_days}d {_hrs}h {_mins}m" if _days else f"{_hrs}h {_mins}m"
+except Exception:
+    UPTIME = "unknown"
+
 # cpu
 try:
     _cpus = os.cpu_count()
@@ -61,4 +72,5 @@ The date is {DATE}.
 The timezone is {TIMEZONE}.
 You have {CPU}.
 RAM is {RAM}.
-Disk is {DISK}."""
+Disk is {DISK}.
+Uptime is {UPTIME}."""
