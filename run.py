@@ -119,7 +119,7 @@ def run_tool(name, args):
             parsed = json.loads(definition)
             with open(path, "w") as fh:
                 json.dump(parsed, fh, indent=2)
-            return f"Tool '{tool_name}' saved to {path}. RELOAD_TOOLS"
+            return f"RELOAD_TOOLS Tool '{tool_name}' created and ready to use."
         except json.JSONDecodeError as e:
             return f"Invalid JSON definition: {e}"
 
@@ -315,9 +315,9 @@ def main():
                     args = {}
                 print(f"{YELLOW}[{name}] {args.get('command', args)}{RESET}")
                 result = run_tool(name, args)
-                if "RELOAD_TOOLS" in result:
+                if result.startswith("RELOAD_TOOLS"):
                     tools = load_tools()
-                    result = result.replace("RELOAD_TOOLS", "Tool is now available.")
+                    result = result.replace("RELOAD_TOOLS ", "")
                 print(f"{GRAY}{result[:200]}{'...' if len(result) > 200 else ''}{RESET}")
                 messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
 
