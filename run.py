@@ -45,9 +45,15 @@ class Spinner:
         self._stop = threading.Event()
         self._thread = None
         self._frames = itertools.cycle(SPINNER_FRAMES)
+        self._active = False
 
     def start(self):
+        if self._active:
+            return
         self._stop.clear()
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+        self._active = True
         self._thread = threading.Thread(target=self._spin, daemon=True)
         self._thread.start()
 
@@ -58,11 +64,12 @@ class Spinner:
             time.sleep(0.08)
 
     def stop(self):
-        if self._thread is None:
+        if not self._active:
             return
         self._stop.set()
         self._thread.join()
         self._thread = None
+        self._active = False
         sys.stdout.write(CLEAR_LINE)
         sys.stdout.flush()
 
@@ -263,6 +270,13 @@ def main():
             print(f"{RESET}\nBye.")
             break
         if not user_input:
+            continue
+
+        if user_input == "/reset":
+            messages = [{"role": "system", "content": SYSTEM}]
+            save_history(messages)
+            os.system("clear")
+            print()
             continue
 
         messages.append({"role": "user", "content": user_input})
