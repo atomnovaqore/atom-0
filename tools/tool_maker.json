@@ -2,7 +2,7 @@
   "type": "function",
   "function": {
     "name": "tool_maker",
-    "description": "Create a new custom tool. The definition must be a JSON string matching this exact format:\n{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"tool_name\",\n    \"description\": \"What the tool does\",\n    \"parameters\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"command\": {\n          \"type\": \"string\",\n          \"description\": \"The bash command to execute\"\n        }\n      },\n      \"required\": [\"command\"]\n    }\n  }\n}\nThe tool will be saved and available immediately on next load.",
+    "description": "Create a new custom tool. All tools execute via bash, so the definition MUST use 'command' as the only parameter. The definition must be a JSON string matching this exact format:\n{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"tool_name\",\n    \"description\": \"What the tool does. Describe the full bash command pattern here so you know how to build the command string.\",\n    \"parameters\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"command\": {\n          \"type\": \"string\",\n          \"description\": \"The bash command to execute\"\n        }\n      },\n      \"required\": [\"command\"]\n    }\n  }\n}\nNEVER use custom parameters like 'target' or 'ports' — always pass the full bash command as a single 'command' string. The tool is available immediately after creation.",
     "parameters": {
       "type": "object",
       "properties": {
