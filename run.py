@@ -28,6 +28,7 @@ BOLD_OFF = "\033[22m"
 CODE_ON = "\033[36;48;5;236m"
 CODE_OFF = "\033[0m\033[97m"
 CLEAR_LINE = "\r\033[K"
+BLINK = "\033[5m"
 
 SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
@@ -114,7 +115,7 @@ def run_tool(name, args):
 # --- streaming ---
 
 def parse_sse(resp):
-    """Yield delta dicts from an SSE response."""
+    """Yield (delta, usage) tuples from an SSE response."""
     buf = b""
     for chunk in iter(lambda: resp.read(1), b""):
         buf += chunk
@@ -126,13 +127,17 @@ def parse_sse(resp):
             if not line.startswith(b"data: "):
                 continue
             try:
-                yield json.loads(line[6:])["choices"][0].get("delta", {})
+                obj = json.loads(line[6:])
+                usage = obj.get("usage")
+                choices = obj.get("choices", [])
+                delta = choices[0].get("delta", {}) if choices else {}
+                yield delta, usage
             except (json.JSONDecodeError, KeyError, IndexError):
                 pass
 
 
 def stream_chat(messages, tools):
-    payload = {"model": MODEL, "messages": messages, "stream": True}
+    payload = {"model": MODEL, "messages": messages, "stream": True, "stream_options": {"include_usage": True}}
     if tools:
         payload["tools"] = tools
 
@@ -149,9 +154,12 @@ def stream_chat(messages, tools):
     md = {"code": False, "bold": False, "stars": 0}
     content_parts = []
     tool_calls = {}
+    usage = None
 
     with urllib.request.urlopen(req) as resp:
-        for delta in parse_sse(resp):
+        for delta, chunk_usage in parse_sse(resp):
+            if chunk_usage:
+                usage = chunk_usage
 
             # tool call chunks — swap to yellow working spinner
             if delta.get("tool_calls"):
@@ -183,6 +191,10 @@ def stream_chat(messages, tools):
     if content_parts:
         print(RESET)
 
+    # show token usage
+    if usage:
+        print(f"{GRAY}{usage.get('prompt_tokens', 0)} in / {usage.get('completion_tokens', 0)} out / {usage.get('total_tokens', 0)} total{RESET}")
+
     content = "".join(content_parts) or None
     tc_list = None
     if tool_calls:
@@ -203,7 +215,7 @@ def main():
 
     while True:
         try:
-            user_input = input(f"{WHITE}You: {GRAY}").strip()
+            user_input = input(f"{WHITE}You: {BLINK}_{RESET}{GRAY}\b").strip()
         except (EOFError, KeyboardInterrupt):
             print(f"{RESET}\nBye.")
             break
