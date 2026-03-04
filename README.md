@@ -12,7 +12,7 @@ python3 chat.py
 
 | Env var     | Default                                         |
 |-------------|--------------------------------------------------|
-| `LLM_URL`   | `http://localhost:19400/v1/chat/completions`     |
+| `LLM_URL`   | `https://api.novaqore.ai/v1/chat/completions`    |
 | `LLM_MODEL` | `qwen3.5`                                        |
 
 ## Remote (via SSH tunnel)

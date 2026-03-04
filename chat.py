@@ -6,7 +6,7 @@ import os
 import sys
 import urllib.request
 
-LLM_URL = os.environ.get("LLM_URL", "http://localhost:19400/v1/chat/completions")
+LLM_URL = os.environ.get("LLM_URL", "https://api.novaqore.ai/v1/chat/completions")
 MODEL = os.environ.get("LLM_MODEL", "qwen3.5")
 SYSTEM = "You are Atom, a helpful assistant."
 
