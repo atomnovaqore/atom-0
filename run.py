@@ -22,6 +22,7 @@ HISTORY_FILE = os.path.join(BASE_DIR, "chat_history.json")
 
 # ANSI
 BLUE = "\033[34m"
+GREEN = "\033[32m"
 YELLOW = "\033[33m"
 WHITE = "\033[97m"
 GRAY = "\033[90m"
@@ -152,7 +153,7 @@ def parse_sse(resp):
                 pass
 
 
-def stream_chat(messages, tools, spinner_label="loading..."):
+def stream_chat(messages, tools, spinner_label="loading...", spinner_color=BLUE):
     payload = {"model": MODEL, "messages": messages, "stream": True, "stream_options": {"include_usage": True}}
     if tools:
         payload["tools"] = tools
@@ -163,7 +164,7 @@ def stream_chat(messages, tools, spinner_label="loading..."):
         headers={"Content-Type": "application/json"},
     )
 
-    responding = Spinner(spinner_label, BLUE)
+    responding = Spinner(spinner_label, spinner_color)
     working = Spinner("working...", YELLOW)
     responding.start()
 
@@ -248,7 +249,7 @@ def main():
     if history:
         messages.append({"role": "user", "content": "Give a brief recap of our last conversation. Respond short."})
         try:
-            content, _ = stream_chat(messages, [], spinner_label="Waking up...")
+            content, _ = stream_chat(messages, [], spinner_label="Waking up...", spinner_color=GREEN)
             if content:
                 messages.append({"role": "assistant", "content": content})
         except Exception:
