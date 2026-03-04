@@ -1,4 +1,5 @@
 import os
+import platform
 import shutil
 from datetime import datetime
 
@@ -10,6 +11,18 @@ now = datetime.now()
 TIME = now.strftime("%-I:%M %p")
 DATE = now.strftime("%b %-d, %Y")
 TIMEZONE = now.astimezone().tzname()
+
+# os
+try:
+    with open("/etc/os-release") as f:
+        _os = dict(l.strip().split("=", 1) for l in f if "=" in l)
+    OS = _os.get("PRETTY_NAME", "").strip('"')
+except Exception:
+    OS = platform.system()
+ARCH = platform.machine()
+HOSTNAME = platform.node()
+SHELL = os.environ.get("SHELL", "unknown")
+USER = os.environ.get("USER", "unknown")
 
 # cpu
 try:
@@ -40,6 +53,9 @@ except Exception:
     DISK = "unknown"
 
 SYSTEM = f"""Your name is Atom.
+The user is {USER} on {HOSTNAME}.
+The OS is {OS} ({ARCH}).
+The shell is {SHELL}.
 Your home directory is {HOME}.
 Node is at {NODE}.
 Python is at {PYTHON}.
