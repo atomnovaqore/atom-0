@@ -28,7 +28,6 @@ BOLD_OFF = "\033[22m"
 CODE_ON = "\033[36;48;5;236m"
 CODE_OFF = "\033[0m\033[97m"
 CLEAR_LINE = "\r\033[K"
-BLINK = "\033[5m"
 
 SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
@@ -218,7 +217,7 @@ def main():
 
     while True:
         try:
-            user_input = input(f"{WHITE}You: {RESET}").strip()
+            user_input = input(f"{WHITE}You:{RESET} ").strip()
         except (EOFError, KeyboardInterrupt):
             print(f"{RESET}\nBye.")
             break
