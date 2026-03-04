@@ -193,7 +193,10 @@ def stream_chat(messages, tools):
 
     # show token usage
     if usage:
-        print(f"{GRAY}{usage.get('prompt_tokens', 0)} in / {usage.get('completion_tokens', 0)} out / {usage.get('total_tokens', 0)} total{RESET}")
+        p = usage.get('prompt_tokens', 0)
+        c = usage.get('completion_tokens', 0)
+        t = usage.get('total_tokens', 0)
+        print(f"{GRAY}{p} in / {c} out — {t}/262144{RESET}")
 
     content = "".join(content_parts) or None
     tc_list = None
